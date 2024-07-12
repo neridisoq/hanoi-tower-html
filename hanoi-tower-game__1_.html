@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하노이탑 게임</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .tower { display: inline-block; width: 120px; height: 200px; background-color: #ddd; margin: 0 10px; position: relative; }
+        .disk { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); height: 20px; border-radius: 10px; }
+        .controls { margin: 20px 0; }
+        select, button { margin: 0 10px; padding: 5px; }
+        #stats { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>하노이탑 게임</h1>
+    <div class="controls">
+        <label for="diskCount">디스크 개수:</label>
+        <select id="diskCount">
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+        </select>
+        <button onclick="initGame()">게임 시작</button>
+        <button onclick="resetGame()">초기화</button>
+    </div>
+    <div id="game">
+        <div class="tower" id="tower1" onclick="selectTower(1)"></div>
+        <div class="tower" id="tower2" onclick="selectTower(2)"></div>
+        <div class="tower" id="tower3" onclick="selectTower(3)"></div>
+    </div>
+    <p id="message">디스크 개수를 선택하고 게임 시작 버튼을 누르세요.</p>
+    <div id="stats">
+        <p id="moveCount">현재 이동 횟수: 0</p>
+        <p id="minMoves">최소 이동 횟수: -</p>
+    </div>
+
+    <script>
+        let selectedTower = null;
+        let towers = [[], [], []];
+        let moveCount = 0;
+        let diskCount = 3;
+        let minMoves = 0;
+
+        function initGame() {
+            resetGame();
+            diskCount = parseInt(document.getElementById('diskCount').value);
+            towers[0] = Array.from({length: diskCount}, (_, i) => diskCount - i);
+            towers[1] = [];
+            towers[2] = [];
+            minMoves = calculateMinMoves(diskCount);
+            updateTowers();
+            updateMoveCount();
+            updateMinMoves();
+            document.getElementById('message').textContent = '첫 번째 탑을 선택하세요.';
+        }
+
+        function resetGame() {
+            selectedTower = null;
+            towers = [[], [], []];
+            moveCount = 0;
+            minMoves = 0;
+            updateMoveCount();
+            updateMinMoves();
+            updateTowers();
+            document.getElementById('message').textContent = '게임이 초기화되었습니다. 게임 시작 버튼을 누르세요.';
+        }
+
+        function calculateMinMoves(n) {
+            return Math.pow(2, n) - 1;
+        }
+
+        function updateTowers() {
+            for (let i = 0; i < 3; i++) {
+                const tower = document.getElementById(`tower${i+1}`);
+                tower.innerHTML = '';
+                for (let j = 0; j < towers[i].length; j++) {
+                    const disk = document.createElement('div');
+                    disk.className = 'disk';
+                    disk.style.width = `${towers[i][j] * 20}px`;
+                    disk.style.backgroundColor = `hsl(${towers[i][j] * 30}, 70%, 50%)`;
+                    disk.style.bottom = `${j * 20}px`;
+                    tower.appendChild(disk);
+                }
+            }
+        }
+
+        function selectTower(towerNum) {
+            if (selectedTower === null) {
+                if (towers[towerNum-1].length === 0) {
+                    document.getElementById('message').textContent = '빈 탑입니다. 다른 탑을 선택하세요.';
+                    return;
+                }
+                selectedTower = towerNum;
+                document.getElementById('message').textContent = `${towerNum}번 탑에서 디스크를 선택했습니다. 목표 탑을 선택하세요.`;
+            } else {
+                moveDisk(selectedTower, towerNum);
+                selectedTower = null;
+            }
+        }
+
+        function moveDisk(from, to) {
+            if (from === to) {
+                document.getElementById('message').textContent = '같은 탑으로는 이동할 수 없습니다.';
+                return;
+            }
+            if (towers[from-1].length === 0) {
+                document.getElementById('message').textContent = '선택한 탑에 디스크가 없습니다.';
+                return;
+            }
+            const disk = towers[from-1][towers[from-1].length - 1];
+            if (towers[to-1].length > 0 && towers[to-1][towers[to-1].length - 1] < disk) {
+                document.getElementById('message').textContent = '큰 디스크를 작은 디스크 위에 놓을 수 없습니다.';
+                return;
+            }
+            towers[to-1].push(towers[from-1].pop());
+            moveCount++;
+            updateMoveCount();
+            updateTowers();
+            checkWin();
+        }
+
+        function updateMoveCount() {
+            document.getElementById('moveCount').textContent = `현재 이동 횟수: ${moveCount}`;
+        }
+
+        function updateMinMoves() {
+            document.getElementById('minMoves').textContent = `최소 이동 횟수: ${minMoves}`;
+        }
+
+        function checkWin() {
+            if (towers[2].length === diskCount) {
+                let message = `축하합니다! ${moveCount}번 만에 게임을 클리어하셨습니다!`;
+                if (moveCount === minMoves) {
+                    message += ' 최소 이동 횟수로 완료하셨습니다!';
+                }
+                document.getElementById('message').textContent = message;
+            } else {
+                document.getElementById('message').textContent = '디스크를 이동할 탑을 선택하세요.';
+            }
+        }
+    </script>
+</body>
+</html>
